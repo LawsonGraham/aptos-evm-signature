@@ -4,7 +4,7 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-signature_verifier = "0x7b1b800e7733c78d000dde1a834c676892b3859122a88d43031355d4ddd71b0"
+signature_verifier = "0xBEEF"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
