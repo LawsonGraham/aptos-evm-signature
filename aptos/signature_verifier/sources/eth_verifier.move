@@ -1,0 +1,96 @@
+module signature_verifier::eth_verifier {
+    use std::signer;
+    use std::option::{Self, Option};
+    use std::vector;
+    use std::hash::sha2_256;
+
+    use aptos_std::secp256k1::{Self, ECDSASignature};
+    use aptos_std::aptos_hash;
+
+    use aptos_framework::from_bcs;
+
+
+    const SIGNATURE_NUM_BYTES: u64 = 64;
+    const ETH_ADDRESS_SIZE: u64 = 20;
+
+    // Errors
+    const ERR_MALFORMED_ETH_ADDRESS: u64 = 1;
+    const ERR_MALFORMED_SIGNATURE: u64 = 2;
+    const ERR_APTOS_ADDRESS_MISMATCH: u64 = 3;
+    const ERR_ETH_ADDRESS_MISMATCH: u64 = 4;
+    const ERR_SIGNATURE_RECOVERY_FAILED: u64 = 5;
+
+
+    struct EthLinkedAccount has key, store {
+        eth_address: vector<u8>,
+    }
+
+    public entry fun verify_accounts_entry(
+        aptos_address: &signer,
+        message: vector<u8>,
+        recovery_id: u8,
+        signature_bytes: vector<u8>,
+        eth_address: vector<u8>
+    ) {
+        // Ensure the signature is 64 bytes (r + s)
+        assert!(std::vector::length(&signature_bytes) == SIGNATURE_NUM_BYTES, ERR_MALFORMED_SIGNATURE);
+
+        let signature = secp256k1::ecdsa_signature_from_bytes(signature_bytes);
+        verify_accounts(aptos_address, message, recovery_id, &signature, eth_address);
+    }
+
+    /// Function to link Ethereum address with Aptos account
+    public fun verify_accounts(
+        aptos_address: &signer,  // The Aptos account (as the caller)
+        message: vector<u8>,
+        recovery_id: u8,         // The 'v' value from the Ethereum signature (recovery id)
+        signature: &ECDSASignature,
+        eth_address: vector<u8>      // The expected Ethereum address (20 bytes)
+    ) {
+        // Ensure the Ethereum address is 20 bytes
+        assert!(vector::length(&eth_address) == ETH_ADDRESS_SIZE, ERR_MALFORMED_ETH_ADDRESS);
+
+        std::debug::print(&message);
+        std::debug::print(&recovery_id);
+        
+        // Hash the message (Aptos address) using SHA2-256
+        let hashed_message = sha2_256(message);
+
+        std::debug::print(&hashed_message);
+
+        // Recover the public key from the hashed message and signature
+        let recovered_key_option = secp256k1::ecdsa_recover(hashed_message, recovery_id, signature);
+
+        // Ensure the public key was recovered successfully
+        assert!(option::is_some(&recovered_key_option), ERR_SIGNATURE_RECOVERY_FAILED);
+
+        // Extract the recovered public key
+        let recovered_key = option::extract(&mut recovered_key_option);
+
+        // Hash the recovered public key using keccak256 to derive the Ethereum address
+        let recovered_eth_address = aptos_hash::keccak256(secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
+
+        std::debug::print(&recovered_eth_address);
+        // // Compare the first 20 bytes of the keccak256 hash to the provided Ethereum address
+        // let recovered_eth_address_slice = std::vector::sub_range(&recovered_eth_address, 12, 32);  // Extract last 20 bytes of keccak hash
+
+        // Ensure the recovered Ethereum address matches the expected one
+        // and that aptos address matches the message
+        assert!(recovered_eth_address == eth_address, ERR_ETH_ADDRESS_MISMATCH);
+        assert!(signer::address_of(aptos_address) == from_bcs::to_address(message), ERR_APTOS_ADDRESS_MISMATCH);
+    }
+
+    #[test_only]
+    use aptos_framework::account;
+
+    #[test(user = @0x7a26be858cbdf707c9b01d9b462a8fadae81cfe28f97805b2d15584208b60436)]
+    public fun test_verify_accounts(user: &signer) {
+        let aptos_account = account::create_account_for_test(signer::address_of(user));
+        let eth_address = x""; // Your Ethereum address
+        let message = x""; // Your Aptos address as a message (32 bytes SHA-256 hash)
+        let signature_bytes = x""; // r + s combined
+        let recovery_id = 27; // Recovery ID
+
+        verify_accounts_entry(&aptos_account, message, recovery_id, signature_bytes, eth_address);
+    }
+}

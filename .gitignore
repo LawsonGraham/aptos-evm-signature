@@ -1,0 +1,9 @@
+aptos/signature_verifier/.aptos
+aptos/signature_verifier/build
+aptos/.aptos
+
+
+evm/node_modules
+evm/build
+evm/.env
+evm/package-lock.json
