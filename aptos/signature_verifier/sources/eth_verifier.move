@@ -87,7 +87,7 @@ module signature_verifier::eth_verifier {
     public fun test_verify_accounts(user: &signer) {
         let aptos_account = account::create_account_for_test(signer::address_of(user));
         let eth_address = x"1915267aeF02ED299b0347a3C70c2B6D82D62f46"; // Your Ethereum address
-        let message = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99"; // Your Aptos address as a message (32 bytes SHA-256 hash)
+        let message = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99"; // Your Aptos address as a message
         let signature_bytes = x"5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e04346998727ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f2463"; // r + s combined
         let recovery_id = 28; // Recovery ID
 
