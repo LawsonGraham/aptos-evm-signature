@@ -8,19 +8,10 @@ const wallet = new ethers.Wallet(privateKey);
 // The message you want to sign (in this case, the Aptos address)
 const aptosAddress = process.env.APTOS_ADDRESS;
 
-// Function to hash the message using SHA2-256
-function hashMessage(message) {
-    return sha256(message); // SHA2-256 hashing
-}
-
 // Function to sign the message using the Ethereum wallet
 async function signMessage() {
-    // Hash the Aptos address before signing it
-    const hashedMessage = hashMessage(aptosAddress);
-    console.log('Hashed Aptos Address (SHA2-256):', hashedMessage);
-
-    // Sign the hashed message
-    const signature = await wallet.signMessage(hashedMessage);
+    // Sign the message (this implcitly hashes the message)
+    const signature = await wallet.signMessage(aptosAddress);
     console.log('Signature:', signature);
 
     // Split the signature into r, s, and v components
