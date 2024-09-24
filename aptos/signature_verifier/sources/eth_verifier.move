@@ -42,9 +42,9 @@ module signature_verifier::eth_verifier {
     /// Function to link Ethereum address with Aptos account
     public fun verify_accounts(
         aptos_address: &signer,  // The Aptos account (as the caller)
-        message: vector<u8>,
+        message: vector<u8>,     // The message to be signed (Aptos address)
         recovery_id: u8,         // The 'v' value from the Ethereum signature (recovery id)
-        signature: &ECDSASignature,
+        signature: &ECDSASignature,  // The signature (r + s) from the Ethereum signature
         eth_address: vector<u8>      // The expected Ethereum address (20 bytes)
     ) {
         // Ensure the Ethereum address is 20 bytes
