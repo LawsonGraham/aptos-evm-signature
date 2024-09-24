@@ -54,7 +54,7 @@ module signature_verifier::eth_verifier {
         std::debug::print(&recovery_id);
         
         // Hash the message (Aptos address) using SHA2-256
-        let hashed_message = sha2_256(message);
+        let hashed_message = aptos_hash::keccak256(message);
 
         std::debug::print(&hashed_message);
 
@@ -68,6 +68,7 @@ module signature_verifier::eth_verifier {
         let recovered_key = option::extract(&mut recovered_key_option);
 
         // Hash the recovered public key using keccak256 to derive the Ethereum address
+        std::debug::print(&secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
         let recovered_eth_address = aptos_hash::keccak256(secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
 
         std::debug::print(&recovered_eth_address);
@@ -76,6 +77,10 @@ module signature_verifier::eth_verifier {
 
         // Ensure the recovered Ethereum address matches the expected one
         // and that aptos address matches the message
+        std::debug::print(&recovered_eth_address);
+        std::debug::print(&eth_address);
+
+
         assert!(recovered_eth_address == eth_address, ERR_ETH_ADDRESS_MISMATCH);
         assert!(signer::address_of(aptos_address) == from_bcs::to_address(message), ERR_APTOS_ADDRESS_MISMATCH);
     }
@@ -87,9 +92,9 @@ module signature_verifier::eth_verifier {
     public fun test_verify_accounts(user: &signer) {
         let aptos_account = account::create_account_for_test(signer::address_of(user));
         let eth_address = x"1915267aeF02ED299b0347a3C70c2B6D82D62f46"; // Your Ethereum address
-        let message = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99"; // Your Aptos address as a message
-        let signature_bytes = x"5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e04346998727ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f2463"; // r + s combined
-        let recovery_id = 28; // Recovery ID
+        let message = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99";
+        let signature_bytes = x"7ada9ff6151fb137c153ad1e98220433fa303837ad33509a7d2645390617433060fbaf5eaaedb1f39c31aa34c28092701774f22404e67f4df3e0e014f6e9cd4e"; // r + s combined
+        let recovery_id = 1; // Recovery ID
 
         verify_accounts_entry(&aptos_account, message, recovery_id, signature_bytes, eth_address);
     }
