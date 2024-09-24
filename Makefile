@@ -10,6 +10,13 @@ SIGNATURE_VERIFIER_DIR := signature_verifier
 all: sign test
 
 # Run yarn sign in the evm/ directory
+.PHONY: install
+sign:
+	@echo "Installing packages in the evm/ directory..."
+	cd $(EVM_DIR) && yarn install
+
+
+# Run yarn sign in the evm/ directory
 .PHONY: sign
 sign:
 	@echo "Running yarn sign in the evm/ directory..."

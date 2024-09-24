@@ -1,18 +1,32 @@
-cd evm
+# USAGE
 
-yarn sign
+## EVM SIDE
 
-output:
-Signature: 0x5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e04346998727ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f24631c
-r: 0x5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e043469987
-s: 0x27ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f2463
-v: 28
-Signature components: Signature { r: "0x5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e043469987", s: "0x27ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f2463", yParity: 1, networkV: null }
+Go into `evm/` and then create `.env` from the `.env.example`. Put in your ethereum wallet Private Key (with `0x`), and your aptos address (with `0x`).
 
-cd ..
+from root, run:
 
-cd aptos
+`make install`
 
-(update data in the test given the output from signature)
+then 
 
-aptos move test --package-dir signature_verifier
+`make sign`
+
+In the logs, see the signature information.
+
+## APTOS SIDE
+
+see the test `test_verify_accounts` in `aptos/signature_verifier/sources/eth_verifier.move`.
+
+update the values to:
+
+```
+let eth_address = x"<YOUR ETH ADDRESS WITHOUT 0x>"; // Your Ethereum address
+let message = x"<YOUR APTOS ADDRESS WITHOUT 0x>";
+let signature_bytes = x"<R without 0x + S withough 0x>"; // r + s combined (64 bytes)
+let recovery_id = 0 or 1; (0 if v == 27 and 1 if v == 28)
+```
+
+finally, run
+
+`make test`
