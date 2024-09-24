@@ -88,7 +88,7 @@ module signature_verifier::eth_verifier {
     #[test_only]
     use aptos_framework::account;
 
-    #[test(user = @0x7a26be858cbdf707c9b01d9b462a8fadae81cfe28f97805b2d15584208b60436)]
+    #[test(user = @0x2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99)]
     public fun test_verify_accounts(user: &signer) {
         let aptos_account = account::create_account_for_test(signer::address_of(user));
         let eth_address = x"1915267aeF02ED299b0347a3C70c2B6D82D62f46"; // Your Ethereum address
