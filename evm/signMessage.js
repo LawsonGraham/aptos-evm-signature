@@ -8,6 +8,27 @@ const wallet = new ethers.Wallet(privateKey);
 // The message you want to sign (in this case, the Aptos address) WITH `0x` prefix
 const aptosAddress = process.env.APTOS_ADDRESS;
 
+// Function to manually construct Uint8Array
+function hexStringToBytes(hexString) {
+    // Remove '0x' if present
+    if (hexString.startsWith('0x')) {
+        hexString = hexString.slice(2);
+    }
+
+    // Ensure even length for the hex string
+    if (hexString.length % 2 !== 0) {
+        throw new Error('Invalid hex string: must have an even number of characters.');
+    }
+
+    // Convert hex string to Uint8Array
+    const byteArray = new Uint8Array(hexString.length / 2);
+    for (let i = 0; i < hexString.length; i += 2) {
+        byteArray[i / 2] = parseInt(hexString.substr(i, 2), 16);
+    }
+
+    return byteArray;
+}
+
 // Function to sign the message using the Ethereum wallet
 async function signMessage() {
     // Sign the message (this implcitly hashes the message)
@@ -16,37 +37,18 @@ async function signMessage() {
     console.log("Pub key: ", publicKey);
     console.log("Address: ", wallet.address)
     console.log("Message: ", aptosAddress);
-    let message = aptosAddress;
+    let message = hexStringToBytes(aptosAddress);
     
     console.log("MessagePrefix: ", MessagePrefix);
-    console.log("Message Length: ", message.length);
-    console.log("Pre Hashed Message: ", concat([
-        toUtf8Bytes(MessagePrefix),
-        toUtf8Bytes(String(message.length)),
-        toUtf8Bytes(hexlify(message))
-    ]));
-    console.log("PRE MESSAGE: ", message);
-    // if (typeof(message) === "string") { message = toUtf8Bytes(message); }
-    console.log("POST MESSAGE: ", message);
     console.log("Hashed Message Raw: ", keccak256(concat([
         toUtf8Bytes(MessagePrefix),
         toUtf8Bytes(String(message.length)),
-        // toUtf8Bytes(String(message))
         message
-        // getBytes(aptosAddress)
     ])));
     console.log("Hashed Message: ", hashMessage(message));
 
 
-
     const signature = await wallet.signMessage(message);
-    // We use the signing key for now so that we can DIRECTLY sign the hash of the message, not
-    // the address preappended by some standard Ethereum message prefixes then hashed
-    // const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(keccak256(concat([
-    //     toUtf8Bytes(MessagePrefix),
-    //     toUtf8Bytes(String(message.length)),
-    //     message
-    // ])));
     console.log('Signature:', signature);
 
     // Split the signature into r, s, and v components

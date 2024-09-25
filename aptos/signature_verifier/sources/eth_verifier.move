@@ -57,13 +57,13 @@ module signature_verifier::eth_verifier {
 
         let full_message = vector::empty();
         vector::append(&mut full_message, ETH_MESSAGE_PREFIX);
-        vector::append(&mut full_message, b"66"); // Add 2 as in ETH signature `0x` is included in message length
+        vector::append(&mut full_message, b"32"); // Add 2 as in ETH signature `0x` is included in message length
         vector::append(&mut full_message, aptos_address);
         std::debug::print(&aptos_hash::keccak256(full_message));
 
         // Hash the message (Aptos address) using Keccak-256
         // let hashed_message = aptos_hash::keccak256(aptos_address);
-        let hashed_message = x"f4196b5c4e32f133cdd8ca6c3d93e12c4183ca75f792e8b03d56c205b0d0edae";
+        let hashed_message = x"c987cfbfadc32d64d470be4b8885f4c7288f055c207ec587ba85f371b55ce5b4";
         std::debug::print(&hashed_message);
 
         // Recover the public key from the hashed message and signature
@@ -98,7 +98,7 @@ module signature_verifier::eth_verifier {
         let aptos_account = account::create_account_for_test(signer::address_of(user));
         let eth_address = x"1915267aeF02ED299b0347a3C70c2B6D82D62f46"; // Your Ethereum address
         let aptos_address = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99";
-        let signature_bytes = x"5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e04346998727ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f2463"; // r + s combined
+        let signature_bytes = x"2237a42f49806d7cfb7442008d7701a1548976e0881640d53aa731f9b98ebd29753e67371ff3b4655ec16f4dcfa1c658e23c78e155822fb95aadb8ae12764d3e"; // r + s combined
         let recovery_id = 1; // Recovery ID
 
         verify_accounts_entry(&aptos_account, aptos_address, recovery_id, signature_bytes, eth_address);
