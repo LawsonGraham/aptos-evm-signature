@@ -45,10 +45,10 @@ module signature_verifier::eth_verifier {
         message: vector<u8>,     // The message to be signed (Aptos address)
         recovery_id: u8,         // The 'v' value from the Ethereum signature (recovery id)
         signature: &ECDSASignature,  // The signature (r + s) from the Ethereum signature
-        eth_address: vector<u8>      // The expected Ethereum address (20 bytes)
+        eth_address_bytes: vector<u8>      // The expected Ethereum address (20 bytes)
     ) {
         // Ensure the Ethereum address is 20 bytes
-        assert!(vector::length(&eth_address) == ETH_ADDRESS_SIZE, ERR_MALFORMED_ETH_ADDRESS);
+        assert!(vector::length(&eth_address_bytes) == ETH_ADDRESS_SIZE, ERR_MALFORMED_ETH_ADDRESS);
 
         std::debug::print(&message);
         std::debug::print(&recovery_id);
@@ -69,19 +69,14 @@ module signature_verifier::eth_verifier {
 
         // Hash the recovered public key using keccak256 to derive the Ethereum address
         std::debug::print(&secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
-        let recovered_eth_address = aptos_hash::keccak256(secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
+        let recovered_eth_address_bytes = aptos_hash::keccak256(secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
 
-        std::debug::print(&recovered_eth_address);
-        // // Compare the first 20 bytes of the keccak256 hash to the provided Ethereum address
-        // let recovered_eth_address_slice = std::vector::sub_range(&recovered_eth_address, 12, 32);  // Extract last 20 bytes of keccak hash
+        // Compare the last 20 bytes of the keccak256 hash to the provided Ethereum address
+        let recovered_eth_address_bytes_slice = vector::slice(&recovered_eth_address_bytes, 12, 32);  // Extract last 20 bytes of keccak hash
+        vector::zip(recovered_eth_address_bytes_slice, eth_address_bytes, |recovered_byte, address_byte| {
+            assert!((recovered_byte as u8) == (address_byte as u8), ERR_ETH_ADDRESS_MISMATCH);
+        });
 
-        // Ensure the recovered Ethereum address matches the expected one
-        // and that aptos address matches the message
-        std::debug::print(&recovered_eth_address);
-        std::debug::print(&eth_address);
-
-
-        assert!(recovered_eth_address == eth_address, ERR_ETH_ADDRESS_MISMATCH);
         assert!(signer::address_of(aptos_address) == from_bcs::to_address(message), ERR_APTOS_ADDRESS_MISMATCH);
     }
 
