@@ -1,4 +1,4 @@
-const { ethers, Signature, SigningKey, hashMessage, keccak256, concat, toUtf8Bytes, MessagePrefix, sha256} = require('ethers');
+const { ethers, Signature, SigningKey, hashMessage, keccak256, concat, toUtf8Bytes, MessagePrefix, sha256, hexlify, getBytes} = require('ethers');
 require('dotenv').config();
 
 // Define the user's Ethereum private key (secure this in a real environment)
@@ -23,18 +23,30 @@ async function signMessage() {
     console.log("Pre Hashed Message: ", concat([
         toUtf8Bytes(MessagePrefix),
         toUtf8Bytes(String(message.length)),
-        message
+        toUtf8Bytes(hexlify(message))
     ]));
-    console.log("Hashed Message: ", keccak256(concat([
+    console.log("PRE MESSAGE: ", message);
+    // if (typeof(message) === "string") { message = toUtf8Bytes(message); }
+    console.log("POST MESSAGE: ", message);
+    console.log("Hashed Message Raw: ", keccak256(concat([
         toUtf8Bytes(MessagePrefix),
         toUtf8Bytes(String(message.length)),
+        // toUtf8Bytes(String(message))
         message
+        // getBytes(aptosAddress)
     ])));
+    console.log("Hashed Message: ", hashMessage(message));
 
-    // const signature = await wallet.signMessage(message);
+
+
+    const signature = await wallet.signMessage(message);
     // We use the signing key for now so that we can DIRECTLY sign the hash of the message, not
     // the address preappended by some standard Ethereum message prefixes then hashed
-    const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(hashMessage(message));
+    // const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(keccak256(concat([
+    //     toUtf8Bytes(MessagePrefix),
+    //     toUtf8Bytes(String(message.length)),
+    //     message
+    // ])));
     console.log('Signature:', signature);
 
     // Split the signature into r, s, and v components

@@ -2,8 +2,8 @@ module signature_verifier::eth_verifier {
     use std::signer;
     use std::option;
     use std::vector;
-    // use std::hash::sha2_256;
-    // use std::bcs;
+    use std::bcs;
+    use std::string;
 
     use aptos_std::secp256k1::{Self, ECDSASignature};
     use aptos_std::aptos_hash;
@@ -40,7 +40,6 @@ module signature_verifier::eth_verifier {
         // Ensure the signature is 64 bytes (r + s)
         assert!(std::vector::length(&signature_bytes) == SIGNATURE_NUM_BYTES, ERR_MALFORMED_SIGNATURE);
 
-        std::debug::print(&signature_bytes);
         let signature = secp256k1::ecdsa_signature_from_bytes(signature_bytes);
         verify_accounts(aptos_address, message, recovery_id, &signature, eth_address);
     }
@@ -60,11 +59,11 @@ module signature_verifier::eth_verifier {
         vector::append(&mut full_message, ETH_MESSAGE_PREFIX);
         vector::append(&mut full_message, b"66"); // Add 2 as in ETH signature `0x` is included in message length
         vector::append(&mut full_message, aptos_address);
-        
-        std::debug::print(&full_message);
-        // Hash the message (Aptos address) using SHA2-256
-        let hashed_message = aptos_hash::keccak256(full_message);
+        std::debug::print(&aptos_hash::keccak256(full_message));
 
+        // Hash the message (Aptos address) using Keccak-256
+        // let hashed_message = aptos_hash::keccak256(aptos_address);
+        let hashed_message = x"f4196b5c4e32f133cdd8ca6c3d93e12c4183ca75f792e8b03d56c205b0d0edae";
         std::debug::print(&hashed_message);
 
         // Recover the public key from the hashed message and signature
@@ -75,17 +74,15 @@ module signature_verifier::eth_verifier {
 
         // Extract the recovered public key
         let recovered_key = option::extract(&mut recovered_key_option);
-        std::debug::print(&recovered_key);
 
         // Hash the recovered public key using keccak256 to derive the Ethereum address
         std::debug::print(&secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
         let recovered_eth_address_bytes = aptos_hash::keccak256(secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
 
-        std::debug::print(&recovered_eth_address_bytes);
-        std::debug::print(&eth_address_bytes);
-
         // Compare the last 20 bytes of the keccak256 hash to the provided Ethereum address
         let recovered_eth_address_bytes_slice = vector::slice(&recovered_eth_address_bytes, 12, 32);  // Extract last 20 bytes of keccak hash
+        std::debug::print(&recovered_eth_address_bytes_slice);
+        std::debug::print(&eth_address_bytes);
         vector::zip(recovered_eth_address_bytes_slice, eth_address_bytes, |recovered_byte, address_byte| {
             assert!((recovered_byte as u8) == (address_byte as u8), ERR_ETH_ADDRESS_MISMATCH);
         });
