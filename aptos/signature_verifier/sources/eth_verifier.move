@@ -61,6 +61,7 @@ module signature_verifier::eth_verifier {
         vector::append(&mut full_message, b"66"); // Add 2 as in ETH signature `0x` is included in message length
         vector::append(&mut full_message, aptos_address);
         
+        std::debug::print(&full_message);
         // Hash the message (Aptos address) using SHA2-256
         let hashed_message = aptos_hash::keccak256(full_message);
 

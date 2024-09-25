@@ -31,11 +31,11 @@ async function signMessage() {
         message
     ])));
 
-    const signature = await wallet.signMessage(message);
+    // const signature = await wallet.signMessage(message);
     // We use the signing key for now so that we can DIRECTLY sign the hash of the message, not
     // the address preappended by some standard Ethereum message prefixes then hashed
-    // const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(keccak256(aptosAddress));
-    // console.log('Signature:', signature);
+    const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(hashMessage(message));
+    console.log('Signature:', signature);
 
     // Split the signature into r, s, and v components
     const signatureSplit = Signature.from(signature);
