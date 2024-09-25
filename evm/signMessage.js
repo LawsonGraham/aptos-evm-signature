@@ -16,13 +16,26 @@ async function signMessage() {
     console.log("Pub key: ", publicKey);
     console.log("Address: ", wallet.address)
     console.log("Message: ", aptosAddress);
-    console.log("Hashed Message: ", keccak256(aptosAddress));
+    let message = aptosAddress;
+    
+    console.log("MessagePrefix: ", MessagePrefix);
+    console.log("Message Length: ", message.length);
+    console.log("Pre Hashed Message: ", concat([
+        toUtf8Bytes(MessagePrefix),
+        toUtf8Bytes(String(message.length)),
+        message
+    ]));
+    console.log("Hashed Message: ", keccak256(concat([
+        toUtf8Bytes(MessagePrefix),
+        toUtf8Bytes(String(message.length)),
+        message
+    ])));
 
-    // const signature = await wallet.signMessage(message);
+    const signature = await wallet.signMessage(message);
     // We use the signing key for now so that we can DIRECTLY sign the hash of the message, not
     // the address preappended by some standard Ethereum message prefixes then hashed
-    const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(keccak256(aptosAddress));
-    console.log('Signature:', signature);
+    // const signature = (new SigningKey(process.env.ETHEREUM_PRIVATE_KEY)).sign(keccak256(aptosAddress));
+    // console.log('Signature:', signature);
 
     // Split the signature into r, s, and v components
     const signatureSplit = Signature.from(signature);

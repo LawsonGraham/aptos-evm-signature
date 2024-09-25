@@ -1,8 +1,9 @@
 module signature_verifier::eth_verifier {
     use std::signer;
-    use std::option::{Self, Option};
+    use std::option;
     use std::vector;
-    use std::hash::sha2_256;
+    // use std::hash::sha2_256;
+    // use std::bcs;
 
     use aptos_std::secp256k1::{Self, ECDSASignature};
     use aptos_std::aptos_hash;
@@ -25,6 +26,10 @@ module signature_verifier::eth_verifier {
         eth_address: vector<u8>,
     }
 
+    // Constants:
+
+    const ETH_MESSAGE_PREFIX: vector<u8> = b"\x19Ethereum Signed Message:\n";
+
     public entry fun verify_accounts_entry(
         aptos_address: &signer,
         message: vector<u8>,
@@ -35,14 +40,15 @@ module signature_verifier::eth_verifier {
         // Ensure the signature is 64 bytes (r + s)
         assert!(std::vector::length(&signature_bytes) == SIGNATURE_NUM_BYTES, ERR_MALFORMED_SIGNATURE);
 
+        std::debug::print(&signature_bytes);
         let signature = secp256k1::ecdsa_signature_from_bytes(signature_bytes);
         verify_accounts(aptos_address, message, recovery_id, &signature, eth_address);
     }
 
     /// Function to link Ethereum address with Aptos account
     public fun verify_accounts(
-        aptos_address: &signer,  // The Aptos account (as the caller)
-        message: vector<u8>,     // The message to be signed (Aptos address)
+        user: &signer,  // The Aptos account (as the caller)
+        aptos_address: vector<u8>,     // The message to be signed (Aptos address)
         recovery_id: u8,         // The 'v' value from the Ethereum signature (recovery id)
         signature: &ECDSASignature,  // The signature (r + s) from the Ethereum signature
         eth_address_bytes: vector<u8>      // The expected Ethereum address (20 bytes)
@@ -50,11 +56,13 @@ module signature_verifier::eth_verifier {
         // Ensure the Ethereum address is 20 bytes
         assert!(vector::length(&eth_address_bytes) == ETH_ADDRESS_SIZE, ERR_MALFORMED_ETH_ADDRESS);
 
-        std::debug::print(&message);
-        std::debug::print(&recovery_id);
+        let full_message = vector::empty();
+        vector::append(&mut full_message, ETH_MESSAGE_PREFIX);
+        vector::append(&mut full_message, b"66"); // Add 2 as in ETH signature `0x` is included in message length
+        vector::append(&mut full_message, aptos_address);
         
         // Hash the message (Aptos address) using SHA2-256
-        let hashed_message = aptos_hash::keccak256(message);
+        let hashed_message = aptos_hash::keccak256(full_message);
 
         std::debug::print(&hashed_message);
 
@@ -66,10 +74,14 @@ module signature_verifier::eth_verifier {
 
         // Extract the recovered public key
         let recovered_key = option::extract(&mut recovered_key_option);
+        std::debug::print(&recovered_key);
 
         // Hash the recovered public key using keccak256 to derive the Ethereum address
         std::debug::print(&secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
         let recovered_eth_address_bytes = aptos_hash::keccak256(secp256k1::ecdsa_raw_public_key_to_bytes(&recovered_key));
+
+        std::debug::print(&recovered_eth_address_bytes);
+        std::debug::print(&eth_address_bytes);
 
         // Compare the last 20 bytes of the keccak256 hash to the provided Ethereum address
         let recovered_eth_address_bytes_slice = vector::slice(&recovered_eth_address_bytes, 12, 32);  // Extract last 20 bytes of keccak hash
@@ -77,7 +89,7 @@ module signature_verifier::eth_verifier {
             assert!((recovered_byte as u8) == (address_byte as u8), ERR_ETH_ADDRESS_MISMATCH);
         });
 
-        assert!(signer::address_of(aptos_address) == from_bcs::to_address(message), ERR_APTOS_ADDRESS_MISMATCH);
+        assert!(signer::address_of(user) == from_bcs::to_address(aptos_address), ERR_APTOS_ADDRESS_MISMATCH);
     }
 
     #[test_only]
@@ -87,10 +99,10 @@ module signature_verifier::eth_verifier {
     public fun test_verify_accounts(user: &signer) {
         let aptos_account = account::create_account_for_test(signer::address_of(user));
         let eth_address = x"1915267aeF02ED299b0347a3C70c2B6D82D62f46"; // Your Ethereum address
-        let message = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99";
-        let signature_bytes = x"7ada9ff6151fb137c153ad1e98220433fa303837ad33509a7d2645390617433060fbaf5eaaedb1f39c31aa34c28092701774f22404e67f4df3e0e014f6e9cd4e"; // r + s combined
+        let aptos_address = x"2930f2c0c4893773f86a66eb8eada5eedd6495566e30e54b1a484eeaeb366c99";
+        let signature_bytes = x"5dbc50bc3d6ab719d865f568ec5e70def5d431fa7d41c871ff7f89e04346998727ba665c3689b193f83f574829408c2fc2396f54c942d5f095f74b56428f2463"; // r + s combined
         let recovery_id = 1; // Recovery ID
 
-        verify_accounts_entry(&aptos_account, message, recovery_id, signature_bytes, eth_address);
+        verify_accounts_entry(&aptos_account, aptos_address, recovery_id, signature_bytes, eth_address);
     }
 }
