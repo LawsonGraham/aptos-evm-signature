@@ -1,14 +1,14 @@
 const { ethers, Signature, SigningKey, hashMessage, keccak256, concat, toUtf8Bytes, MessagePrefix, sha256, hexlify, getBytes} = require('ethers');
 require('dotenv').config();
 
-// Define the user's Ethereum private key (secure this in a real environment)
+// Define the user's Ethereum private key WITH `0x` prefix
 const privateKey = process.env.ETHEREUM_PRIVATE_KEY;
 const wallet = new ethers.Wallet(privateKey);
 
 // The message you want to sign (in this case, the Aptos address) WITH `0x` prefix
 const aptosAddress = process.env.APTOS_ADDRESS;
 
-// Function to manually construct Uint8Array
+// Function to manually construct Uint8Array in the same way Aptos does
 function hexStringToBytes(hexString) {
     // Remove '0x' if present
     if (hexString.startsWith('0x')) {
@@ -31,32 +31,22 @@ function hexStringToBytes(hexString) {
 
 // Function to sign the message using the Ethereum wallet
 async function signMessage() {
+    console.log(`Signing the Aptos Address ${aptosAddress} with the Ethereum Wallet ${wallet.address}`);
+
     // Sign the message (this implcitly hashes the message)
-    const publicKey = SigningKey.computePublicKey(process.env.ETHEREUM_PRIVATE_KEY);
-
-    console.log("Pub key: ", publicKey);
-    console.log("Address: ", wallet.address)
-    console.log("Message: ", aptosAddress);
-    let message = hexStringToBytes(aptosAddress);
-    
-    console.log("MessagePrefix: ", MessagePrefix);
-    console.log("Hashed Message Raw: ", keccak256(concat([
-        toUtf8Bytes(MessagePrefix),
-        toUtf8Bytes(String(message.length)),
-        message
-    ])));
-    console.log("Hashed Message: ", hashMessage(message));
-
-
+    const message = hexStringToBytes(aptosAddress);
     const signature = await wallet.signMessage(message);
-    console.log('Signature:', signature);
 
     // Split the signature into r, s, and v components
     const signatureSplit = Signature.from(signature);
-    console.log('r:', signatureSplit.r);
-    console.log('s:', signatureSplit.s);
-    console.log('v:', signatureSplit.v);  // Recovery ID (1 or 0, typically)
 
+    console.log(`For testing:
+        let eth_address = x"${wallet.address.slice(2)}"; // User Ethereum address
+        let aptos_address = x"${aptosAddress.slice(2)}"; // User Aptos address
+        let signature_bytes = x"${signature.slice(2, 130)}"; // r + s combined
+        let recovery_id = ${signatureSplit.v % 27}; // Recovery ID
+    `);
+    
     return signatureSplit;
 }
 
